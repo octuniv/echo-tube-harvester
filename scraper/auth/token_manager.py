@@ -6,7 +6,9 @@ from typing import Optional
 import logging
 import time
 from utils.retry import retry
+
 logger = logging.getLogger(__name__)
+
 
 class TokenManager:
     def __init__(self):
@@ -41,12 +43,18 @@ class TokenManager:
         try:
             response = requests.post(
                 f"{config.nestjs_api_url}/auth/login",
-                json={"email": config.bot_email, "password": config.bot_password}
+                json={"email": config.bot_email, "password": config.bot_password},
             )
             response.raise_for_status()
             tokens = response.json()
             # JWT 디코딩으로 만료 시간 추출 (액세스 토큰만)
-            decoded = jwt.decode(tokens["access_token"], options={"verify_exp": True})
+            decoded = jwt.decode(
+                tokens["access_token"],
+                options={
+                    "verify_exp": True,
+                    "verify_signature": False,
+                },
+            )
             self.access_token_expiry = decoded.get("exp", time.time() + 3600)
             self.access_token = tokens["access_token"]
             self.refresh_token = tokens["refresh_token"]
@@ -61,11 +69,17 @@ class TokenManager:
         try:
             response = requests.post(
                 f"{config.nestjs_api_url}/auth/refresh",
-                json={"refresh_token": self.refresh_token}
+                json={"refresh_token": self.refresh_token},
             )
             response.raise_for_status()
             new_tokens = response.json()
-            decoded = jwt.decode(new_tokens["access_token"], options={"verify_exp": True})
+            decoded = jwt.decode(
+                new_tokens["access_token"],
+                options={
+                    "verify_exp": True,
+                    "verify_signature": False,
+                },
+            )
             self.access_token_expiry = decoded.get("exp", time.time() + 3600)
             self.access_token = new_tokens["access_token"]
             self.refresh_token = new_tokens["refresh_token"]

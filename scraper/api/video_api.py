@@ -45,4 +45,5 @@ class VideoAPI:
         elif response.status_code == 400:
             logging.warning(f"잘못된 요청 - 데이터: {data}")
             return None
+        logger.info(f"비디오 저장 성공 - 게시판: {slug}, 영상 ID: {data['youtubeId']}")
         return response.json()
